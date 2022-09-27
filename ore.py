@@ -43,10 +43,12 @@ class ORE:
     def compare(x: OREncoding, y: OREncoding):
         if x == y:
             return 0
+        _x = x.x
+        _y = y.x
         for _ in range(64):
-            a = x.x & 0b11
-            b = y.x & 0b11
+            a = _x & 0b11
+            b = _y & 0b11
             if a != b:
                 return 1 if a == (b+1) & 0b11 else -1
-            x.x >>= 2
-            y.x >>= 2
+            _x >>= 2
+            _y >>= 2
