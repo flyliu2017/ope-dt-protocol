@@ -15,6 +15,8 @@ def gini(arr):
     return res
 
 
+IRIS_FEATURE = ['Sepal length', 'Sepal width', 'Petal length', 'Petal width']
+
 class CartNode:
     def __init__(self, kv=None, children=None, label=None, depth=0):
         if kv is not None:
@@ -29,7 +31,10 @@ class CartNode:
     def get_plot_text(self):
         if self.label is not None:
             return f"{self.label}"
-        return f'#[{self.key}] < {self.val} ?'
+        try:
+            return f'{IRIS_FEATURE[self.key]} < {self.ori_val}?\n=>\n{IRIS_FEATURE[self.key]} < ..{str(self.val)[-4:]}'
+        except:
+            return f'{IRIS_FEATURE[self.key]} < {self.val}?'
 
 class CartTree:
     def __init__(self, min_gain=0.8, max_depth=18):
@@ -133,3 +138,4 @@ class CartTree:
         logger.info(f'plot_str: {plot_str}')
         graph = pdp.graph_from_dot_data(plot_str)
         open('img/tree.png', 'wb').write(graph.create_png())
+        graph.write('img/tree.eps', format='eps')

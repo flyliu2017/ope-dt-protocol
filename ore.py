@@ -21,11 +21,17 @@ class OREncoding:
     def __lt__(self, __o):
         return ORE.compare(self, __o) == -1
 
+    def __gt__(self, __o):
+        return ORE.compare(self, __o) == 1
+    
+    def __ge__(self, __o):
+        return ORE.compare(self, __o) != -1
+
     def __str__(self) -> str:
         return str(self.x)
 
 class ORE:
-    def __init__(self, key):
+    def __init__(self, key='111'):
         self.key = key
         self.hasher = nacl.hash.sha256
     
