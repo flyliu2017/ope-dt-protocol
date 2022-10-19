@@ -31,6 +31,7 @@ class CartNode:
     def get_plot_text(self):
         if self.label is not None:
             return f"{self.label}"
+        # return f'{IRIS_FEATURE[self.key]} < {self.val}?'
         try:
             return f'{IRIS_FEATURE[self.key]} < {self.ori_val}?\n=>\n{IRIS_FEATURE[self.key]} < ..{str(self.val)[-4:]}'
         except:

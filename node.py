@@ -46,7 +46,7 @@ class ModelProvider:
 
     def train_model(self):
         self.dataset = read_iris()
-        self.model = CartTree(max_depth=5)
+        self.model = CartTree(max_depth=3)
         self.model.fit(self.dataset)
         score = self.model.score(self.dataset, [x[-1] for x in self.dataset])
         print(f'MP model score: {score * 100:.2f}%')
