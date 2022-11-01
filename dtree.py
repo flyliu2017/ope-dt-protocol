@@ -136,7 +136,7 @@ class CartTree:
                     q.put(c)
                     plot_str += f'{now.name} -> {c.name}; '
         plot_str = 'digraph g {%s}' % plot_str
-        logger.info(f'plot_str: {plot_str}')
-        graph = pdp.graph_from_dot_data(plot_str)
-        open('img/tree.png', 'wb').write(graph.create_png())
-        graph.write('img/tree.eps', format='eps')
+        # logger.info(f'plot_str: {plot_str}')
+        # graph = pdp.graph_from_dot_data(plot_str)
+        # open('img/tree.png', 'wb').write(graph.create_png())
+        # graph.write('img/tree.eps', format='eps')

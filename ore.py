@@ -1,6 +1,7 @@
 from calendar import c
 import nacl.encoding
 import nacl.hash
+import random
 
 from utils import *
 
@@ -10,6 +11,12 @@ def bin_enc(x):
     if x < 0:
         return '0' + '1' * (64 - n - 1) + ''.join(['1' if i=='0' else '0' for i in res])
     return '1' + '0' * (64 - n - 1) + res
+
+
+def prg(sd):
+    random.seed(sd)
+    return random.randint(1, 123580)
+
 
 class OREncoding:
     def __init__(self, x) -> None:
@@ -33,16 +40,17 @@ class OREncoding:
 class ORE:
     def __init__(self, key='111'):
         self.key = key
-        self.hasher = nacl.hash.sha256
+        self.hasher = nacl.hash.blake2b
     
     def encode(self, x: int):
         res = 0
         s = bin_enc(x)
         n = len(s)
         for i in range(63, -1, -1):
-            t = f'{self.key}{i}{s[:i]}{"0" * (n-i)}'.encode()
-            digest = self.hasher(t, encoder=nacl.encoding.HexEncoder)
-            res = (res << 2) | ((int.from_bytes(digest, 'big') + int(s[i])) & 0b11)
+            # t = f'{self.key}{i}{s[:i]}{"0" * (n-i)}'.encode()
+            # digest = self.hasher(t, encoder=nacl.encoding.HexEncoder)
+            t = int(f'{self.key}{i}{s[:i]}{"0" * (n-i)}')
+            res = (res << 2) | ((prg(t) + int(s[i])) & 0b11)
         return OREncoding(res)
 
     @staticmethod

@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from sklearn.datasets import load_svmlight_file
 
 DATA_PATH = Path('./dataset')
 
@@ -11,4 +11,24 @@ def read_iris():
     for i in range(len(res)):
         for j in range(nf):
             res[i][j] = float(res[i][j])
+    return res
+
+def read_rna():
+    data = load_svmlight_file(str((DATA_PATH / 'cod-rna.libsvm')))
+    xs, ys = data[0], data[1]
+    xs = xs.toarray().tolist()
+    ys.tolist()
+    res = []
+    for i in range(len(xs)):
+        res.append(xs[i] + [ys[i]])
+    return res
+
+def read_libsvm(name):
+    data = load_svmlight_file(str((DATA_PATH / f'{name}.libsvm')))
+    xs, ys = data[0], data[1]
+    xs = xs.toarray().tolist()
+    ys.tolist()
+    res = []
+    for i in range(len(xs)):
+        res.append(xs[i] + [ys[i]])
     return res

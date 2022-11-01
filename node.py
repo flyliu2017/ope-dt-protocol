@@ -1,4 +1,6 @@
 import random
+import time
+from tqdm.auto import tqdm
 
 from utils import *
 from ore import *
@@ -18,8 +20,11 @@ class Coordinator:
     def receive_keys(self, mp_arr, do_arr):
         self.mo_arr = mp_arr
         self.do_arr = do_arr
-        for key in mp_arr + do_arr:
+        st = time.time()
+        res = []
+        for key in tqdm(mp_arr + do_arr):
             self.tree.insert(key=key, val=0)
+            res.append(time.time()-st)
         node = self.tree.get_left_leaf()
         cnt = 0
         while node is not None:
@@ -29,6 +34,7 @@ class Coordinator:
             node = node.next
         print('All data inserted into tree.')
         self.calc_encoding()
+        return res
 
     def calc_encoding(self):
         self.mp_map = {}
@@ -45,7 +51,7 @@ class ModelProvider:
         self.ore = ORE()
 
     def train_model(self):
-        self.dataset = read_iris()
+        self.dataset = read_libsvm(name='rna')
         self.model = CartTree(max_depth=3)
         self.model.fit(self.dataset)
         score = self.model.score(self.dataset, [x[-1] for x in self.dataset])
@@ -75,12 +81,12 @@ class ModelProvider:
                 dfs(nd)
         dfs(self.model.root)
         print('All val in tree are mapped to OREncoding.')
-        self.model.save_plot()
+        # self.model.save_plot()
 
 
 class DataOwner:
     def __init__(self):
-        self.dataset = read_iris()
+        self.dataset = read_libsvm(name='rna')
         self.ore = ORE()
 
     def get_encodings(self):
@@ -89,8 +95,10 @@ class DataOwner:
             for v in sample:
                 if isinstance(v, float) or isinstance(v, int):
                     res.append(scale_val(v))
-        res = [self.ore.encode(x) for x in res]
-        return res
+        ret = []
+        for x in tqdm(set(res)):
+            ret.append(self.ore.encode(x))
+        return ret
 
     def receive_map(self, ore_map):
         self.ore_map = ore_map
