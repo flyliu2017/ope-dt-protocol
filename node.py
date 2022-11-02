@@ -1,5 +1,6 @@
 import random
 import time
+import pickle
 from tqdm.auto import tqdm
 
 from utils import *
@@ -57,36 +58,37 @@ class ModelProvider:
         score = self.model.score(self.dataset, [x[-1] for x in self.dataset])
         print(f'MP model score: {score * 100:.2f}%')
 
+    def load_model(self, name='iris', clf='dt'):
+        self.model = pickle.load(open(f'model/{name}.{clf}', 'rb'))
+
     def get_encodings(self):
         res = []
-        def dfs(node):
-            if node.label is not None:
-                return
-            res.append(scale_val(node.val))
-            for nd in node.children:
-                dfs(nd)
-        dfs(self.model.root)
+        model = self.model.tree_
+        for i in range(model.node_count):
+            if model.children_left[i] != model.children_right[i]:
+                res.append(scale_val(model.threshold[i]))
         res = [self.ore.encode(x) for x in res]
         return res
 
+    def trans_model(self):
+        model = self.model.tree_
+        model.threshold = model.threshold.tolist()
+        for i in range(model.node_count):
+            if model.children_left[i] != model.children_right[i]:
+                _k = model.threshold[i]
+                _k = self.ore.encode(scale_val(_k)).x
+                model.threshold[i] =  OREncoding(self.ore_map[_k])
+        print('All val in tree are mapped to OREncoding.')
+        
     def receive_map(self, ore_map):
         self.ore_map = ore_map
-        def dfs(node):
-            if node.label is not None:
-                return
-            _k = self.ore.encode(scale_val(node.val)).x
-            node.ori_val = node.val
-            node.val = OREncoding(ore_map[_k])
-            for nd in node.children:
-                dfs(nd)
-        dfs(self.model.root)
-        print('All val in tree are mapped to OREncoding.')
+        self.trans_model()
         # self.model.save_plot()
 
 
 class DataOwner:
-    def __init__(self):
-        self.dataset = read_libsvm(name='rna')
+    def __init__(self, dname='iris'):
+        self.dataset = auto_read_data(name=dname)
         self.ore = ORE()
 
     def get_encodings(self):

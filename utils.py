@@ -1,6 +1,6 @@
 from loguru import logger
 
-MAXN  = 1 << 64
+MAXN  = 1 << 128
 SCALE = 1 << 32
 
 def scale_val(x):

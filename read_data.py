@@ -32,3 +32,9 @@ def read_libsvm(name):
     for i in range(len(xs)):
         res.append(xs[i] + [ys[i]])
     return res
+
+def auto_read_data(name):
+    if name in ['rna', 'madelon', 'mushrooms']:
+        return read_libsvm(name)
+    elif name == 'iris':
+        return read_iris()
