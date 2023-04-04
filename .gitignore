@@ -8,3 +8,4 @@ rpc/
 dataset
 img/
 model/
+*.ipynb

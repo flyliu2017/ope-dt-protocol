@@ -23,8 +23,8 @@ def read_rna():
         res.append(xs[i] + [ys[i]])
     return res
 
-def read_libsvm(name):
-    data = load_svmlight_file(str((DATA_PATH / f'{name}.libsvm')))
+def read_libsvm(data_path):
+    data = load_svmlight_file(data_path)
     xs, ys = data[0], data[1]
     xs = xs.toarray().tolist()
     ys.tolist()
@@ -35,6 +35,6 @@ def read_libsvm(name):
 
 def auto_read_data(name):
     if name in ['rna', 'madelon', 'mushrooms']:
-        return read_libsvm(name)
+        return read_libsvm(str((DATA_PATH / f'{name}.libsvm')))
     elif name == 'iris':
         return read_iris()

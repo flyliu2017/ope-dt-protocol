@@ -3,11 +3,13 @@ import time
 import pickle
 from tqdm.auto import tqdm
 
-from utils import *
+from trans import TransDT
 from ore import *
 from bplustree import *
 from read_data import *
-from dtree import *
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.datasets import load_svmlight_file
+
 
 class Coordinator:
     def __init__(self):
@@ -25,7 +27,7 @@ class Coordinator:
         res = []
         for key in tqdm(mp_arr + do_arr):
             self.tree.insert(key=key, val=0)
-            res.append(time.time()-st)
+            res.append(time.time() - st)
         node = self.tree.get_left_leaf()
         cnt = 0
         while node is not None:
@@ -50,16 +52,17 @@ class Coordinator:
 class ModelProvider:
     def __init__(self):
         self.ore = ORE()
-
-    def train_model(self):
-        self.dataset = read_libsvm(name='rna')
-        self.model = CartTree(max_depth=3)
-        self.model.fit(self.dataset)
-        score = self.model.score(self.dataset, [x[-1] for x in self.dataset])
+        self.model = None
+        self.encoded_model = None
+    def train_model(self, data_path):
+        self.x, self.y = load_svmlight_file(data_path)
+        self.model = DecisionTreeClassifier(max_depth=3)
+        self.model.fit(self.x, self.y)
+        score = self.model.score(self.x, self.y)
         print(f'MP model score: {score * 100:.2f}%')
 
-    def load_model(self, name='iris', clf='dt'):
-        self.model = pickle.load(open(f'model/{name}.{clf}', 'rb'))
+    def load_model(self, model_path):
+        self.model = pickle.load(open(model_path, 'rb'))
 
     def get_encodings(self):
         res = []
@@ -70,25 +73,54 @@ class ModelProvider:
         res = [self.ore.encode(x) for x in res]
         return res
 
-    def trans_model(self):
-        model = self.model.tree_
-        model.threshold = model.threshold.tolist()
-        for i in range(model.node_count):
-            if model.children_left[i] != model.children_right[i]:
-                _k = model.threshold[i]
+    def encode_threshold_by_map(self, tree):
+        threshold_list = tree.threshold.tolist()
+        encode_result = []
+        for i in range(tree.node_count):
+            if tree.children_left[i] != tree.children_right[i]:
+                _k = threshold_list[i]
                 _k = self.ore.encode(scale_val(_k)).x
-                model.threshold[i] =  OREncoding(self.ore_map[_k])
+                encode_result.append(OREncoding(self.ore_map[_k]))
+            else:
+                encode_result.append(threshold_list[i])
         print('All val in tree are mapped to OREncoding.')
-        
+        return encode_result
     def receive_map(self, ore_map):
         self.ore_map = ore_map
         self.trans_model()
-        # self.model.save_plot()
+
+    def trans_model(self):
+        if self.encoded_model is None:
+            n_nodes = self.model.tree_.node_count
+            children_left = self.model.tree_.children_left.tolist()
+            children_right = self.model.tree_.children_right.tolist()
+            feature = self.model.tree_.feature.tolist()
+            values = self.model.tree_.value.tolist()
+
+            classes = self.model.classes_
+
+            def get_cls(s):
+                idx = max(list(enumerate(s)), key=lambda x: x[1])[0]
+                return classes[idx]
+
+            values = [get_cls(s[0]) for s in values]
+            threshold = self.encode_threshold_by_map(self.model.tree_)
+
+            ret = TransDT()
+            ret.n_nodes = n_nodes
+            ret.children_left = children_left
+            ret.children_right = children_right
+            ret.feature = feature
+            ret.threshold = threshold
+            ret.values = values
+
+            self.encoded_model = ret
+        return ret
 
 
 class DataOwner:
-    def __init__(self, dname='iris'):
-        self.dataset = auto_read_data(name=dname)
+    def __init__(self, data_path):
+        self.dataset = read_libsvm(data_path)
         self.ore = ORE()
 
     def get_encodings(self):
